@@ -1,0 +1,55 @@
+---
+title: "Project 5"
+author: "Erika Vargas"
+date: "February 12, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+SONS<- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T3_8_SONS.DAT", quote="\"", comment.char="", stringsAsFactors=FALSE, col.names = c("Y1", "Y2","X1", "X2"))
+head(SONS)
+attach(SONS)
+```
+
+```{r}
+SONS.std <-sweep(SONS, 2, sqrt(apply(SONS,2,var)), FUN="/")
+first_son<-SONS.std[,1:2]
+first_son
+Second_son <-SONS.std[,3:4]
+Second_son
+```
+
+```{r warning=FALSE}
+#a) canonical correlations between (y1,y2) and (x1,x2)
+#install.packages("CCA")
+library(CCA)
+results <-cc(first_son, Second_son)
+canoni.cor <-results$cor
+canoni.cor
+
+
+```
+
+```{r}
+#b) standarized coeficients for the canonical variates
+std.coef_X <-results$xcoef
+std.coef_X
+std.coef_Y <- results$ycoef
+std.coef_Y
+```
+
+```{r}
+#c) Test the significance of each canonical correlation
+library("yacca")
+cca2 <- cca(first_son, Second_son)
+F.test.cca(cca2)
+```
+
+
+
+
+

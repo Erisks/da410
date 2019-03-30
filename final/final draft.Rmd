@@ -1,0 +1,182 @@
+---
+title: "final exam"
+author: "Erika Vargas"
+date: "March 15, 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# PROBLEM 1
+
+```{r}
+
+## covariance matrix
+s <- rbind(c(5,0,0),c(0,9,0), c(0,0,8))
+
+## a. eigen values and eigen vectors of S
+eigen.s <- eigen(s)
+eigen.s
+
+## b. percentage of variance explained
+prop.var <- eigen.s$values[1:3] / sum(eigen.s$values)
+prop.var
+cumsum(prop.var)
+
+## c. how many components to retain
+plot(cumsum(prop.var), xlab = "Principal Component", ylab = "Cumulative Proportion of Variance Explained", type = "b")
+
+```
+*For the example data, the scree plot markers for components 1–3 are non-linear, so components 1–3 should be kept.even though the first two components explain 77% of the data, 80% of variance explained would be better. It seem that the third component adds value.*
+
+# PROBLEM 2
+```{r}
+
+## building the correlation matrix
+R <- matrix(rep(0,6*6), nrow=6, dimnames = list(c("French", "English", "History", "Arithmetic", "Algebra", "Geometry")))
+diag(R) <- 1
+R[lower.tri(R)] <- c(0.44,0.41,0.29,0.33,0.25,0.35,0.35
+                               ,0.32,0.33,0.16,0.19,0.18,0.59,0.47,0.46)    
+R
+
+## Principal component loadings for 3 factors
+library(psych)
+solution<- principal(R, nfactors = 3, rotate = 'none', covar = FALSE)
+solution$loadings
+
+```
+**First Principal Component Analysis - PCA1**
+The first principal component is a measure of the scores in French, Arithmetic, Algebra, and Geometry. As we can see this component is associated with low scores in french, moderately high scores in Arithmetic and Algebra.They are positively related to PCA1 because they all have positive signs*
+
+**Second Principal Component Analysis - PCA2**
+The second principal component is a measure of the scores for all 6 school subjects. PCA2 is associated with moderately high scores in English, and  moderately low scores in History. It also shows low scores fro French and algebra. 
+
+**Third Principal Component Analysis - PCA3**
+The third principal component is a measure of the scores in French, English, and History. we can see very high scores in History, and moderately low scores in English and French*
+
+#PROBLEM 3
+
+```{r}
+## loading FoodStuff dataset
+dataset_3 <- read.csv("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/final/data_3.csv", header= TRUE, sep=" ", skipNul = T)
+head(dataset_3,5)
+View(dataset_3)
+str(dataset_3)
+
+FoodStuff <- dataset_3[,2:6] #taking food name off 
+str(FoodStuff)
+View(FoodStuff)
+## correlation matrix
+cor  <-cor(FoodStuff)
+round(cor,3)
+
+## principal component analysis function
+# to decide the number of factors i used prcomp(). Performs a principal components analysis on the given data matrix and returns the results as an object of class prcomp.
+food.pca <- prcomp(FoodStuff,
+                 center = TRUE,
+                 scale. = TRUE) 
+## a. NUMBER OF FACTORS
+eigenfood <-eigen(cor)
+round(eigenfood$values,3) #first two factors have lambda > 1
+summary(food.pca)
+plot(food.pca, type= "l")
+
+#PRINCIPAL COMPONENT Analysis
+pca_food<- principal(FoodStuff, nfactors = 3, rotate = 'none', covar = FALSE)
+
+# b. LOADINGS
+round(pca_food$loadings,3)
+
+# C. VARIANCE EXPLAINED AND FACTORES SCORES
+pca_food
+prop.var.food <- (eigenfood$values[1:3] / sum(eigenfood$values) )*100
+round(prop.var.food,3)  #percent of variance explained for each factor
+pca_food$fit #Fit of the model to the correlation matrix
+summary(pca_food)
+                
+#plot for the factors scores
+biplot(pca_food, scale = 0)
+
+```
+*The second method says to retain the components whose eigen values are greater than the average of the eigen values (for correlation matrix, this average is 1).*
+*Since lambda for the first and second component is greater than 1, I am keeping those components, however the total of variance explained with just two components is only 67%,so keeping the third component whose eigen value is 0.85. would give us a 84% of variance explained. This satisfies the first method. of keeping factors that explain at least 80% of total variance.*
+
+**Loadings interpretation**
+
+**First Principal Component Analysis - PCA1**
+The first principal component is a measure of high amount of Energy, fat, and the moderately low amount of calcium. It associates all 5 variables. 
+
+**Second Principal Component Analysis - PCA2**
+The second principal component is a measure of the low amount of protein, and high amount of Iron.  
+
+**Third Principal Component Analysis - PCA3**
+The third principal component associates all variables and it measures the high amount of calcium, and the moderately low amount of protein and Iron.
+
+*the first component explained 43.9% of variance, the second component explained 22.9% of variance, and the third component explained 17% of varaince.*
+
+# PROBLEM 4
+
+```{r}
+
+Problem4_dataset <- read.file("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/final/dataset_4.csv", sep=" ", skipNul = T, header = FALSE, col.names= c("patient #","y1","y2","x1","x2","x3"))
+ head(Problem4_dataset,5)
+ 
+patients <- Problem4_dataset[,2:6] # taking the patient number off
+ 
+patients.std <-sweep(patients, 2, sqrt(apply(patients,2,var)), FUN="/")
+major.variables<-patients.std[,1:2]
+major.variables
+
+minor.variables <- patients.std[,3:5]
+minor.variables
+
+# a. canonical correlations between (y1,y2) and (x1,x2,x3)
+#install.packages("CCA")
+library(CCA)
+results <-cc(major.variables, minor.variables)
+canoni.cor <-results$cor
+canoni.cor
+
+# b. Test the significance of each canonical correlation
+library("yacca")
+cca2 <- cca(major.variables, minor.variables)
+F.test.cca(cca2)
+
+```
+**Canonical correlations**
+*r1 = 0.3419 and r2 = 0.0572*
+
+**Test of Significance**
+*H_0:all canonical correlations r1,r2 are NOT significant*
+*Ha:all canonical correlations r1,r2 are significant*
+At alpha = 0.05 we DO NOT reject Ho for the first canonical correlation (r1). Because p- value 0.8482 is greater than 0.05. hence, we conclude that r1 is NOT significant
+At alpha =0.05 we reject Ho for the second correlation (r2). Because p-value 0 is less than 0.05. Hence, we conclude that R2 is significant.
+
+
+# PROBLEM 5
+
+```{r}
+library(lavaan)
+## a. syntax for the model
+HS.model<-'
+    # three-factor model
+      visual =~ x1 + x2 
+      textual =~ x3 + x4 + x5 + x6
+      speed   =~ x7 + x8 + x9
+    # orthogonal factors
+      visual ~~ 0*textual
+      '
+fit<- sem(HS.model, data=HolzingerSwineford1939)
+summary(fit, standardized=TRUE)
+## b. representation of the 3 factor model
+lavaan.diagram(fit, main = "Three-factor Model")
+library(semPlot)
+semPaths(fit,"std", title = FALSE, edge.color = "purple", color = "grey", rotation = 4)
+
+
+```
+ 
+on the second graph we can see that the visual factor and the textual factor have zero correlation 
+

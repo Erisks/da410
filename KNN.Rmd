@@ -1,0 +1,82 @@
+---
+title: "knn"
+author: "Erika Vargas"
+date: "February 5, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#9.c Classification table using KNN method
+```{r }
+##we have to normalize the data in order to start the nearest neighbor method
+##the normalization function is created
+nor <-function(x) { (x -min(x))/(max(x)-min(x))   }
+
+##Run nomalization on first 4 coulumns of dataset because they are the predictors
+beetles.NOexp.number <- beetles[,-1]
+beetles_norm <- as.data.frame(lapply(beetles.NOexp.number[,c(1,2,3,4)], nor))
+
+summary(beetles_norm)  # check normalize data
+
+```
+
+```{r}
+## doing distance matrix 
+haltica <- as.matrix(x1)
+carduorum <- as.matrix(x2)
+
+t(haltica[1,]-haltica[2,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[2,])
+t(haltica[1,]-haltica[3,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[3,])
+t(haltica[1,]-haltica[4,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[4,])
+t(haltica[1,]-haltica[5,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[5,])
+
+# select the 3rd from each data matrix and use nearest neighbor method to assign them into group1 or group2
+o.vec1 <-haltica[1,]
+c.vec1 <-carduorum[1,]
+
+#Calculate it with vector 1 for species 1 taking vec 1 as new y one by one
+
+dis.o1 <- (o.vec1-haltica[1,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[1,])
+dis.o1
+
+dis.o2 <- (o.vec1-haltica[2,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[2,])
+dis.o2
+
+dis.o3 <- (o.vec1-haltica[3,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[3,])
+dis.o3
+
+dis.o10 <- (o.vec1-haltica[10,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[10,])
+dis.o10
+
+#Calculate it with vector 1 for species 2  one by one 
+dis.c1 <- (o.vec1-carduorum[1,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[1,])
+dis.c1
+
+dis.c2 <- (o.vec1-carduorum[2,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[2,])
+dis.c2
+
+dis.c3 <- (o.vec1-carduorum[3,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[3,])
+dis.c3
+```
+
+
+```{r}
+#doing the loop for the distance 
+#using vec1 as y value 
+result_dist <- rep(1:39)
+for (i in 2:19) {
+  result_dist[i]=t(haltica[1,]-haltica[i,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[i,])
+}
+for (i in 1:20) {
+  result_dist[i+19]=t(haltica[1,]-carduorum[i,])%*% solve(pooled_scov) %*% (haltica[1,]-carduorum[i,])
+}
+
+distances <- data.frame(x = 1:39 , y = c(result_dist) )
+distances
+
+order(result_dist)
+
+```

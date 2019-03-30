@@ -1,0 +1,307 @@
+---
+title: "HW5"
+author: "Erika Vargas"
+date: "February 3, 2019"
+output: word_document 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+beetles <- read.table(file = "BEETLES.txt", col.names = c("Exp.Number", "species","y1", "y2", "y3", "y4"))
+
+beetles$species <- as.factor(beetles$species)
+attach(beetles)
+head(beetles)
+
+```
+
+```{r }
+beetles.NOexp.number <- beetles[,-1]  # removing the exp.number column before doing the analysis
+
+
+```
+
+```{r }
+#######Use Hotelling's T^2 
+#######Getting the mean for the two species 
+# number of observations for the 'H.oleracea' group and the 'H. carduorum' group:
+H.oler <- length(species[species == 1])
+h.cardu <- length(species[species==2])
+```
+
+```{r }
+# Splitting the data matrix (while removing the 2th column, species)
+# into two subsets, one for oler and another for cardu:
+x1 <- beetles.NOexp.number[species==1, -1]
+x2 <- beetles.NOexp.number[species==2, -1]
+
+colMeans(x1)
+colMeans(x2)
+my.q <- ncol(x1)
+my.q
+
+```
+
+```{r }
+# Sample mean vectors for the 'oler' species and the 'cardo' species:
+m1 <- apply(x1, 2, mean)
+m2 <- apply(x2, 2, mean)
+
+```
+
+```{r }
+# "pooled" sample covariance matrix Sp1:
+pooled_scov <- ((H.oler-1)*var(x1)+(h.cardu-1)*var(x2))/(H.oler+h.cardu-2)
+pooled_scov  #Sp1
+```
+
+
+```{r }
+# Hotelling T^2, the F-statistic, and the P-value:
+T2 <- ((H.oler*h.cardu)/(H.oler+h.cardu))* (t(m1-m2) %*% solve(pooled_scov) %*% (m1-m2) )  # code on p. 140 of book is wrong here!
+Fstat <- ((H.oler+h.cardu-my.q-1)*T2)/((H.oler+h.cardu-2)*my.q)
+pvalue <- 1-pf(Fstat, my.q, H.oler+h.cardu-my.q-1)
+
+print(paste("Hotelling T^2 =", round(T2,4), 
+            "F=", round(Fstat,4), "P-value =", round(pvalue,4) ))
+```
+# from Hotelling test we conclude that the covariances are equal between the 2 species of flea beetles
+
+```{r }
+m1 #mean vectors for H.oler
+m2 #mean vectors for H.cardu
+mean <- m1-m2
+t(mean)
+```
+
+```{r }
+s.manova <- manova(cbind(y1,y2,y3,y4) ~ species)
+s.manova
+
+```
+
+```{r }
+## The matrix E:
+my.n <- nrow(beetles.NOexp.number)
+my.n
+E <- (my.n - 1)*var(residuals(s.manova))
+E
+
+```
+
+
+
+#9.a Classification function and cutoff point 
+```{r}
+## classification function 
+a <- (m1 - m2) %*% solve(pooled_scov)
+a
+
+```
+
+```{r }
+## cutoff point
+cutoff <- 0.5*(m1-m2) %*% solve(pooled_scov) %*% (m1+m2)
+cutoff
+
+```
+
+```{r}
+z1_bar <- a %*%m1
+z1_bar
+
+z2_bar <-a %*%m2
+z2_bar
+```
+
+
+
+```{r}
+## prediction equation
+prediction_rule <- as.data.frame(apply(beetles.NOexp.number[,2:5], 1, function(y){
+  z <- (m1-m2) %*% solve(pooled_scov) %*% y}))
+
+#classification function
+classif_function <- ifelse(prediction_rule > as.numeric(cutoff),1,2)
+
+```
+
+
+
+#9.b Classification table using classification function 
+```{r }
+#(Actual VS Prediction) using classification function 
+species_pred_table <- table(beetles.NOexp.number$species, classif_function, dnn = c('Actual group','prediction group'))
+
+species_pred_table  ## Classification table
+error_rate = 1/sum(classif_function == beetles.NOexp.number$species)
+error_rate
+
+```
+
+
+```{r }
+## checking results 
+#classification with LDA
+library(MASS)
+
+beetles.lda <- lda(species ~ ., data = beetles.NOexp.number)
+lda.pred <- predict(beetles.lda)$class
+table(beetles.NOexp.number$species, lda.pred, dnn = c('Actual Group','Predicted Group'))
+```
+## we got the same results
+
+#9.c Classification table using KNN method
+```{r }
+##we have to normalize the data in order to start the nearest neighbor method
+##the normalization function is created
+nor <-function(x) { (x -min(x))/(max(x)-min(x))   }
+
+##Run nomalization on first 4 coulumns of dataset because they are the predictors
+beetles_norm <- as.data.frame(lapply(beetles.NOexp.number[,c(2,3,4,5)], nor))
+
+summary(beetles_norm)  # check normalize data
+
+```
+
+```{r}
+## doing distance matrix 
+haltica <- as.matrix(x1)
+carduorum <- as.matrix(x2)
+
+t(haltica[1,]-haltica[2,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[2,])
+t(haltica[1,]-haltica[3,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[3,])
+t(haltica[1,]-haltica[4,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[4,])
+t(haltica[1,]-haltica[5,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[5,])
+
+# select the 3rd from each data matrix and use nearest neighbor method to assign them into group1 or group2
+o.vec1 <-haltica[1,]
+c.vec1 <-carduorum[1,]
+
+#Calculate it with vector 1 for species 1 taking vec 1 as new y one by one
+
+dis.o1 <- (o.vec1-haltica[1,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[1,])
+dis.o1
+
+dis.o2 <- (o.vec1-haltica[2,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[2,])
+dis.o2
+
+dis.o3 <- (o.vec1-haltica[3,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[3,])
+dis.o3
+
+dis.o10 <- (o.vec1-haltica[10,]) %*% solve(pooled_scov) %*% (o.vec1-haltica[10,])
+dis.o10
+
+#Calculate it with vector 1 for species 2  one by one 
+dis.c1 <- (o.vec1-carduorum[1,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[1,])
+dis.c1
+
+dis.c2 <- (o.vec1-carduorum[2,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[2,])
+dis.c2
+
+dis.c3 <- (o.vec1-carduorum[3,]) %*% solve(pooled_scov) %*% (o.vec1-carduorum[3,])
+dis.c3
+```
+
+
+```{r}
+#doing the loop for the distance 
+result_dist <- rep(1:39)
+for (i in 2:19) {
+  result_dist[i]=t(haltica[1,]-haltica[i,])%*% solve(pooled_scov) %*% (haltica[1,]-haltica[i,])
+}
+for (i in 1:20) {
+  result_dist[i+19]=t(haltica[1,]-carduorum[i,])%*% solve(pooled_scov) %*% (haltica[1,]-carduorum[i,])
+}
+
+distances <- as.table(x = c(result_dist))
+distances
+
+order(result_dist)
+
+```
+
+
+```{r}
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r KNN}
+## we have to normalize the data because each species has different length
+##Generate a random number that is 90% of the total number of rows in dataset.
+ran <- sample(1:nrow(beetles.NOexp.number), 0.9 * nrow(beetles.NOexp.number)) 
+
+##the normalization function is created
+nor <-function(x) { (x -min(x))/(max(x)-min(x))   }
+
+##Run nomalization on first 4 coulumns of dataset because they are the predictors
+beetles_norm <- as.data.frame(lapply(beetles.NOexp.number[,c(2,3,4,5)], nor))
+
+summary(beetles_norm)
+
+```
+
+```{r }
+##extract training set
+beetles_train <- beetles_norm[ran,] 
+
+##extract testing set
+beetles_test <- beetles_norm[-ran,] 
+```
+
+```{r }
+##extract 1th column of train dataset because it will be used as 'cl' argument in knn function.
+beetles_target_category <- beetles.NOexp.number[ran,1]
+
+##extract 1th column if test dataset to measure the accuracy
+beetles_test_category <- beetles.NOexp.number[-ran,1]
+```
+
+```{r}
+##load the package class
+library(class)
+
+##run knn function with k=5
+group_prediction_k5 <- knn(beetles_train,beetles_test,cl=beetles_target_category,k=5)
+
+##create confusion matrix
+tabk5 <- table(group_prediction_k5,beetles_test_category)
+tabk5
+
+##this function divides the correct predictions by total number of predictions that tell us how accurate teh model is.
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tabk5)
+
+```
+
+```{r}
+##run knn function with k=4
+group_prediction4 <- knn(beetles_train,beetles_test,cl=beetles_target_category,k=4)
+
+##create confusion matrix
+tabk4 <- table(group_prediction4,beetles_test_category)
+tabk4
+
+##this function divides the correct predictions by total number of predictions that tell us how accurate teh model is.
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tabk4)
+```
+

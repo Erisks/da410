@@ -1,0 +1,299 @@
+---
+title: "mid test"
+author: "Erika Vargas"
+date: "February 8, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r problem 1}
+A <- matrix(c(2,-2,1,1,2,2,2,1,-2), nrow = 3, ncol = 3, byrow= TRUE)
+A
+t(A)
+C <-matrix(c(2/3,-2/3,1/3,1/3,2/3,2/3,2/3,1/3,-2/3), nrow = 3, ncol = 3, byrow= TRUE)
+det(C)
+t(C)
+solve(C)
+```
+
+```{r problem 2}
+ana <- matrix(c(3,2,-1,3), nrow = 2, ncol = 2, byrow= TRUE)
+banana <- matrix(c(0,4,6,2), nrow = 2, ncol = 2, byrow= TRUE)
+ana
+banana
+# multiply ana* banana
+ana %*%banana
+# multiply banana * ana
+banana %*% ana
+```
+
+```{r problem 3}
+pepa<- matrix(c(3,5,2,7,5,6), nrow = 2, ncol = 3, byrow= TRUE)
+tota <- matrix(c(4,3,-2,-5,8,3), nrow = 2, ncol = 3, byrow= TRUE)
+pepa
+tota
+##a
+pepa+tota
+pepa-tota
+
+##b
+t(pepa)%*%pepa
+pepa%*% t(pepa)
+
+#c
+t(pepa+tota)
+t(pepa) + t(tota)
+
+```
+
+```{r problem 4}
+#loading the data
+blood_d <- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/REAGENT_DATA.txt", 
+                      col.names = c('reagent', 'subject', 'y1', 'y2', 'y3'))
+blood_d 
+```
+
+```{r}
+blood_reagent <- as.factor(blood_d$reagent)
+
+str(blood_d) # the data contains 5 variables and 80 observations
+blood_reagent # different types of regeant 
+
+#conducting manova test to see if there are significant differences in the group mean vectors
+Reagent.manova <- manova(cbind(blood_d$y1, blood_d$y2, blood_d$y3) ~ blood_reagent, 
+                      data = blood_d)
+
+summary(Reagent.manova)
+cov(blood_d)
+# comparison of the 4 tests
+#pillai
+summary(Reagent.manova, test='Pillai')
+
+#roy
+summary(Reagent.manova, test='Roy')
+#Roy output conversion -> (Roy output)/(1+Roy output)
+roy <-0.14336/(1+0.14336)
+roy
+
+#wilks
+summary(Reagent.manova, test='Wilks')
+
+#Hotelling-Lawley
+summary(Reagent.manova, test='Hotelling-Lawley')
+
+
+##The test statistics rely on the error E and hypothesis H matrices.
+n <- dim(blood_d[1]) / length(unique(blood_reagent))
+total.means <- colMeans(blood_d[,3:5])  #variable means 
+
+reagent.group <- split(blood_d[,3:5], blood_d$reagent)  #each reagent patients data
+
+#mean by groups: colmeans for each variable in each reagent group 
+reagent.means <- sapply(reagent.group, function(x) 
+  {
+  apply(x, 2, mean)
+}, simplify = 'data.frame')
+```
+
+```{r problem 5}
+# matrix for scores
+
+scores_data<- matrix(c(90,60,90,90,90,30,60,60,60,60,60,90,30,30,30), nrow=5, ncol = 3, byrow = TRUE)
+colnames(scores_data) <- c("Math","English","Art")
+
+Math <- c(90,90,60,60,30)
+English <- c(60,90,60,60,30)
+Art <- c(90,30,60,90,30)
+scores <- data.frame(Math,English,Art)
+
+#sample covariance S
+scores.cov <- cov(scores_data)
+scores.cov
+
+#correlation matrix R
+scores.corr <- cor(scores_data)
+scores.corr
+
+#defining
+a <- matrix(c(-2, 3, 1), nrow = 3)
+ybar <- matrix(c(mean(Math), mean(English), mean(Art)), nrow = 3)
+ybar
+
+#sample mean vector
+zbar <- t(a) %*% ybar
+zbar
+
+#sample variance
+samp_var <- t(a) %*% scores.cov %*% a
+samp_var
+
+```
+
+```{r problem 6}
+
+library(Flury) #contains the flea beetles dataset
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+#Loading and exploring the data
+data(flea.beetles)
+head(flea.beetles)
+str(flea.beetles)
+names(flea.beetles)
+table(flea.beetles$Species)
+summary(flea.beetles)
+
+
+
+H.O <- flea.beetles[flea.beetles$Species=="oleracea",-1]
+H.A <- flea.beetles[flea.beetles$Species=="carduorum",-1]
+
+#mean vectors fro each species
+m1 <- apply(H.O, 2, mean)
+m2 <- apply(H.A, 2, mean)
+
+#Sp1
+Sp1<- ((19-1)*var(H.O)+(20-1)*var(H.A))/(19+20-2)
+Sp1  #Sp1
+
+### classification function and cutoff
+## classification function 
+class_fun <- (m1 - m2) %*% solve(Sp1)
+class_fun
+
+## cutoff point
+cutoff <- 0.5*(m1-m2) %*% solve(Sp1) %*% (m1+m2)
+cutoff
+
+
+
+### clasdifcation table using knn
+#STEP 1 - normalizing numeric data
+##the normalization function is created
+nor <-function(x) {
+  return ((x -min(x))/(max(x)-min(x)))   }
+
+Flea_nor <- as.data.frame(lapply(flea.beetles[2:5], nor))
+
+summary(Flea_nor)
+
+#STEP 2 - creating training and test dataset. we are using same dataset
+bee_train <- Flea_nor[1:39,]
+bee_test <- Flea_nor[1:39,]
+
+#target value is species
+bee_train_label <-as.matrix(flea.beetles[1:39, 1])
+bee_test_label <- as.matrix(flea.beetles[1:39, 1])
+
+#STEP 3 - training model on data
+library(class)
+#k =3
+sqrt(39)
+fleaBeetle_pred3 <- knn(train = bee_train, test = bee_test, cl=bee_train_label,k=3)
+
+
+#STEP 4 - evaluade model performance
+library(gmodels)
+CrossTable(x=bee_test_label, y= fleaBeetle_pred3,prop.chisq = FALSE)
+N <- nrow(Flea_nor)
+
+accuracy_k3 = sum(fleaBeetle_pred3 == flea.beetles$Species)/N
+accuracy_k3  #accuracy
+
+##c
+## prediction equation
+pred_rule <- as.data.frame(apply(flea.beetles[,2:5], 1, function(y){
+  z <- (m1-m2) %*% solve(Sp1) %*% y}))
+
+#classification function
+class_fun <- ifelse(pred_rule > as.numeric(cutoff),'oleracea','carduorum')
+
+####(Actual VS Prediction) using classification function 
+beetle.pred <- table(flea.beetles$Species, class_fun, dnn = c('Actual group','prediction group'))
+
+beetle.pred  ## Classification table
+error_rate = 1/length(flea.beetles$Species)
+error_rate  ##misclassification rate
+
+```
+
+```{r problem 7}
+#using LDA
+library(MASS)
+
+beetle.lda <- lda(Species ~ ., data = flea.beetles, prior=c(0.5,0.5))
+beetle.lda
+
+lda.pred <- predict(beetle.lda)$class
+table(flea.beetles$Species, lda.pred, dnn = c('Actual Group','Predicted Group'))
+
+# prediction for new flea beetle
+new.obv <- predict(beetle.lda,newdata=data.frame(TG=189, Elytra=245, Second.Antenna=138, Third.Antenna=164))
+new.obv   ## the new beetle should be classified as H. oleracea 
+
+###Misclassification rate for LDA 
+beetle.cv <- lda(Species ~ ., CV = TRUE, data = flea.beetles)
+beetle.cv$class
+
+table(flea.beetles$Species, beetle.cv$class, dnn = c('Actual Group','Predicted Group'))
+
+#miss.rate
+beetle.er <-3/39
+beetle.er
+
+```
+
+```{r problem 8}
+glucose<- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/glucose.txt", header=FALSE, col.names=c("y1", "y2", "y3", "x1", "x2", "x3"))
+
+colMeans(glucose)
+
+cov(glucose)
+
+
+```
+
+```{r problem 9}
+econ<- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T5_8_GOODS.DAT", header=FALSE, col.names=c("Item", "goods", "y1", "y2", "y3", "y4"))
+
+econ <- econ[,-1]  #removing item number
+attach(econ)
+goods <- as.factor(econ$goods)
+
+consumer <- length(goods[goods ==1])
+consumer
+
+producer <- length(goods[goods==2])
+producer
+
+consumer_data <- econ[goods==1, -1]
+producer_data <- econ[goods==2, -1]
+
+my.q <- ncol(consumer_data)
+
+#mean vector for consumer and producer
+m_consumer <- apply(consumer_data, 2, mean)
+m_producer <- apply(producer_data, 2, mean)
+
+# "pooled" sample covariance matrix:
+S.econ<- ((consumer-1)*var(consumer_data)+(producer-1)*var(producer_data))/(consumer+producer-2)
+S.econ
+
+
+# Hotelling T^2, the F-statistic, and the P-value:
+Hotelling <- ((consumer*producer)/(consumer+producer))* (t(m_consumer-m_producer) %*% solve(S.econ) %*% (m_consumer-m_producer) )  
+
+Fstat <- ((consumer+producer-my.q-1)*Hotelling)/((consumer+producer-2)*my.q)
+
+pvalue <- 1-pf(Fstat, my.q, consumer+producer-my.q-1)
+
+print(paste("Hotelling T^2 =", round(Hotelling,4), "F=", round(Fstat,4), "P-value =", round(pvalue,4) ))
+
+
+
+```
+

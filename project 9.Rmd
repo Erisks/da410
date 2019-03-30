@@ -1,0 +1,63 @@
+---
+title: "project 8"
+author: "Erika Vargas"
+date: "March 10, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(lavaan)
+head(HolzingerSwineford1939)
+str(HolzingerSwineford1939)
+```
+
+```{r}
+HS.model<-'
+    # measurament model 
+           visual =~ x1+x2+x3
+           textual =~ x4+x5+x6
+           speed =~ x7+x8+x9'
+```
+
+```{r}
+fit<- sem(HS.model, data=HolzingerSwineford1939)
+summary(fit, standardized=TRUE, fit.measures=TRUE)
+inspect(fit)
+```
+
+```{r}
+library(semPlot)
+semPaths(fit, title = FALSE)
+semPaths(fit,"std", title = FALSE)
+```
+
+```{r}
+HS.model1<-'
+    # three-factor model 
+visual =~ x1 + x2 + x3 
+textual =~ x4 + x5 + x6 
+speed =~ NA*x7 + x8 + x9 
+  # orthogonal factors 
+visual ~~ 0*speed 
+textual ~~ 0*speed 
+  # fix variance of speed factor 
+speed ~~ 1*speed
+'
+
+fit1<- sem(HS.model1, data=HolzingerSwineford1939)
+summary(fit1, standardized=TRUE, fit.measures=TRUE)
+
+```
+
+```{r}
+
+byschool<- sem(HS.model, group = "school", data=HolzingerSwineford1939)
+summary(byschool, standardized=TRUE, fit.measures=TRUE)
+semPaths(byschool, "std",title = TRUE)
+
+```
+

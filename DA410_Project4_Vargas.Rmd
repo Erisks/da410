@@ -1,0 +1,171 @@
+---
+title: "Project 4"
+author: "Erika Vargas"
+date: "February 4, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#EDA
+
+
+```{r load the data}
+beetles <- read.table(file = "BEETLES.txt", , col.names = c("Exp.Number", "species","y1", "y2", "y3", "y4"))
+```
+
+```{r SUMMARY STATISTICS}
+head(beetles)
+summary(beetles)
+names(beetles)
+dim(beetles)
+str(beetles)
+
+```
+
+```{r }
+beetles <- beetles[-1]  #removes the first variable(exp.numb) from the data set.
+
+```
+
+```{r}
+species <-factor(beetles$species, levels = c("1","2"),labels = c("H.oler","H.cardu"))
+
+table(species)   #length for each species 
+# proportion
+round(prop.table(table(species))*100, digits = 2)
+```
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+```{r}
+# visualization
+ggplot(data = beetles) + geom_bar(mapping = aes(x=species))
+
+#histogram for y1 
+beetles.NOexp.number%>%     ggplot(aes(x=y1, fill=species))+     geom_histogram(binwidth = 10) 
+
+#Density plot of y1
+beetles.NOexp.number%>%     ggplot(aes(x=y1, fill=species))+     geom_density(alpha=0.5) 
+
+
+```
+
+```{r}
+#scatter plots
+beetles.NOexp.number%>%     ggplot(aes(x = y1, y = y2, colour = species))+     geom_point(size = 3)
+beetles.NOexp.number%>%     ggplot(aes(x = y1, y = y3, colour = species))+     geom_point(size = 3)
+beetles.NOexp.number%>%     ggplot(aes(x = y1, y = y4, colour = species))+     geom_point(size = 3)
+beetles.NOexp.number%>%     ggplot(aes(x = y2, y = y3, colour = species))+     geom_point(size = 3)
+beetles.NOexp.number%>%     ggplot(aes(x = y2, y = y4, colour = species))+     geom_point(size = 3)
+beetles.NOexp.number%>%     ggplot(aes(x = y3, y = y4, colour = species))+     geom_point(size = 3)
+
+plot(beetles.NOexp.number$y1,beetles.NOexp.number$y2,col=species)
+
+plot(beetles.NOexp.number$y3,beetles.NOexp.number$y4,col=species)
+```
+
+
+
+```{r}
+#STEP 1 - normalizing numeric data
+##the normalization function is created
+nor <-function(x) {
+  return ((x -min(x))/(max(x)-min(x)))   }
+
+beetles_nor <- as.data.frame(lapply(beetles[2:5], nor))
+
+summary(beetles_nor)
+```
+
+```{r}
+#STEP 2 - creating training and test dataset. ratio 26:13
+
+bee_train <- beetles_nor[1:39,]
+bee_test <- beetles_nor[1:39,]
+
+#target value is species
+bee_train_label <-as.matrix(beetles[1:39, 1])
+bee_test_label <- as.matrix(beetles[1:39, 1])
+
+```
+
+```{r}
+#STEP 3 - training model on data
+library(class)
+#k is generally chosen as the square root of the number of observations
+sqrt(39)
+beetle_test_pred <- knn(train = bee_train, test = bee_test, cl=bee_train_label,k=5)
+
+```
+
+```{r}
+#STEP 4 - evaluade model performance
+library(gmodels)
+CrossTable(x=bee_test_label, y= beetle_test_pred,prop.chisq = FALSE)
+N <- nrow(beetles_nor)
+accuracy_k5 = sum(beetle_test_pred == beetles$species)/N
+accuracy_k5
+
+```
+
+```{r}
+#STEP 5 - improve the performance of the model
+#(repeat step 3 and 4 with diff k) 
+
+#k = 4
+beetle_test_pred4 <- knn(train = bee_train, test = bee_test, cl=bee_train_label,k=4)
+
+CrossTable(x=bee_test_label, y= beetle_test_pred4,prop.chisq = FALSE)
+
+accuracy_k4 = sum(beetle_test_pred4 == beetles$species)/N
+accuracy_k4  #accuracy 
+```
+
+```{r}
+#k = 3
+beetle_test_pred3 <- knn(train = bee_train, test = bee_test, cl=bee_train_label,k=3)
+
+CrossTable(x=bee_test_label, y= beetle_test_pred3,prop.chisq = FALSE)
+
+accuracy_k3 = sum(beetle_test_pred3 == beetles$species)/N
+accuracy_k3
+```
+
+```{r}
+#k = 1
+beetle_test_pred1 <- knn(train = bee_train, test = bee_test, cl=bee_train_label,k=1)
+
+CrossTable(x=bee_test_label, y= beetle_test_pred1,prop.chisq = FALSE)
+
+accuracy_k1 = sum(beetle_test_pred1 == beetles$species)/N
+accuracy_k1
+
+```
+
+
+```{r}
+library(ElemStatLearn)
+require(class)
+x <- bee_train
+g <- bee_train_label
+xnew <- bee_test
+mod15 <- knn(x, xnew, g, k=5, prob=TRUE)
+prob <- attr(mod15, "prob")
+prob <- ifelse(mod15=="1", prob, 1-prob)
+px1 <- haltica
+px2 <- carduorum
+prob15 <- matrix(prob, length(px1), length(px2))
+par(mar=rep(2,4))
+contour(px1, px2, prob15, levels=0.5, labels="", xlab="", ylab="", main=
+        "5-nearest neighbour", axes=FALSE)
+points(x, col=ifelse(g==1, "coral", "cornflowerblue"))
+gd <- expand.grid(x=px1, y=px2)
+points(gd, pch=".", cex=1.2, col=ifelse(prob15>0.5, "coral", "cornflowerblue"))
+box()
+```
+

@@ -1,0 +1,62 @@
+---
+title: "Assignment 6"
+author: "Erika Vargas"
+date: "February 11, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+### homework 6
+SONS<- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T3_8_SONS.DAT", quote="\"", comment.char="", stringsAsFactors=FALSE, col.names = c("Y1", "Y2","X1", "X2"))
+head(SONS)
+attach(SONS)
+
+colMeans(SONS)
+cov(SONS)
+
+SONS.std <-sweep(SONS, 2, sqrt(apply(SONS,2,var)), FUN="/")
+first_son.means <-SONS.std[,1:2]
+first_son.means 
+Second_son.means <-SONS.std[,3:4]
+Second_son.means 
+```
+
+```{r}
+#correlation matrix
+R11 <-cor(first_son.means)
+R22 <-cor(Second_son.means)
+R12 <-c(cor(first_son.means[,1], Second_son.means[,1]), cor(first_son.means[,1], Second_son.means[,2]),cor(first_son.means[,2], Second_son.means[,1]), cor(first_son.means[,2], Second_son.means[,2]))
+R12 <-matrix(R12, ncol=ncol(R22), byrow=T) # R12 has q2 columns, same as number of sons heads measurements
+R12
+R21 <-t(R12)  # R21=transpose of R12
+```
+
+```{r}
+#EIGEN VALUES
+# Finding the E1 and E2 matrices:
+E1 <-solve(R11) %*% R12 %*% solve(R22) %*% R21
+E2 <-solve(R22) %*% R21 %*% solve(R11) %*% R12
+print(E1)
+print(E2)
+
+eigen(E1)
+eigen(E2)
+
+#a). canonical correlation between (y1,y2) and (x1,x2)
+canon.corr1 <-sqrt(eigen(E1)$values)
+canon.corr1
+```
+
+```{r}
+# The canonical variates are based on the eigenvectors of E1 and E2:
+
+# a1 = (0.73, -0.69)
+#b1 = (-0.68, -0.73)
+# a2 = (-0.70, 0.71)
+#b2 = (-0.71, 0.70)
+```
+

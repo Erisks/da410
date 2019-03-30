@@ -1,0 +1,8 @@
+---
+title: "test-report"
+author: "Erika Vargas"
+date: "January 24, 2019"
+output: word_document
+---
+
+my report starts here 

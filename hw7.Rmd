@@ -1,0 +1,64 @@
+---
+title: "HW7"
+author: "Erika Vargas"
+date: "February 14, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+PROBE <- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T3_6_PROBE.DAT", quote="\"", comment.char="", col.names= c("Subj.Numb", "y1","y2","y3","y4","y5"))
+Prob_word <- PROBE[, 2:6]
+Prob_subject <- PROBE[, 1]
+```
+
+```{r}
+#Use R
+Prob_word.scaled <- scale(Prob_word, center = TRUE, scale = TRUE)
+# 1. Correlation matrix
+cor.m <- cor(Prob_word.scaled)
+round(cor.m, 2)
+# 2. Calculate eigenvectors/eigenvalues
+res.eign <- eigen(cor.m)
+res.eign
+# 3. Calculate Propotion
+var.explained <- res.eign$values/(sum(res.eign$values))*100 
+round(var.explained,2) #percentage of variance explained
+
+```
+
+```{r}
+#Use S
+# 1. Covariance matrix
+cov.m <- cov(Prob_word.scaled)
+cov.m
+# 2. Calculate eigenvectors/eigenvalues
+eigen(cov.m)
+# 3. Calculate Propotion
+prop.variance <-res.eign$values/(sum(res.eign$values))*100
+round(prop.variance,2) #percentage of variance explained
+
+```
+
+```{r}
+#components to retain
+cum.variance <-cumsum(prop.variance)
+round(cum.variance,2)
+
+# apply PCA - scale. = TRUE is highly 
+# advisable, but default is FALSE. 
+probe.pca <- prcomp(Prob_word,
+                 center = TRUE,
+                 scale. = TRUE) 
+# print method
+print(probe.pca)
+# plot method
+plot(probe.pca, type = "l")
+# summary method
+summary(probe.pca)
+```
+
+

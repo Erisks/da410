@@ -1,0 +1,72 @@
+---
+title: "hw8"
+author: "Erika Vargas"
+date: "February 27, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ESSAY <- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T5_9_ESSAY.DAT", quote="\"", comment.char="", stringsAsFactors=FALSE, col.names = c("student", "y1","y2", "x1", "x2"))
+View(ESSAY)
+```
+
+```{r}
+EssayForm<- ESSAY[, 2:5]
+Essay_student <- ESSAY[, 1]
+```
+
+```{r}
+# STEP 1 1. Correlation matrix
+correM <- cor(EssayForm)
+round(correM, 3)
+```
+
+```{r}
+#STEP 2. Eigenvalue D and eigenvector
+eigen <- eigen(correM)
+eigen
+```
+
+```{r}
+#Step 3. find C1 and D1
+C1 <-eigen$vectors[, 1:2]
+C1
+
+D1 <- diag(eigen$values[1:2], nrow = 2, ncol = 2)
+D1
+```
+
+```{r}
+#STEP 4.
+C1 %*% sqrt(D1)
+
+```
+
+```{r}
+#STEP 5.obtain the loadings
+loadings <- C1 %*% sqrt(D1)
+loadings
+ p<-ncol(EssayForm)
+sign <- vector(mode = "numeric", length = p)
+sign <- sign(colSums(loadings)) 
+#generates a -1 if total is a negative number and keeps it at +1 if > 0. 
+#This is then applied to the loadings to flip the signs. See below:
+loadings2<-loadings %*% diag(sign)
+loadings2
+
+#communalities 
+S.h2 <- rowSums(loadings2^2)
+S.h2
+S.u2 <- diag(correM)-S.h2
+S.u2     #specific variances
+
+#Calculate Propotion
+prop.var <- cbind(eigen$values[1] / sum(eigen$values), eigen$values[2] / sum(eigen$values))
+prop.var #Proportion of total variance
+
+```
+

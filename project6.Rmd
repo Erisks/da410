@@ -1,0 +1,64 @@
+---
+title: "project6"
+author: "Erika Vargas"
+date: "February 26, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+PROBE <- read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T3_6_PROBE.DAT", quote="\"", comment.char="", col.names= c("Subj.Numb", "y1","y2","y3","y4","y5"))
+Prob_word <- PROBE[, 2:6]
+                 
+Prob_subject <- PROBE[, 1]
+
+```
+
+```{r}
+# apply PCA - scale. = TRUE is highly 
+# advisable, but default is FALSE. 
+probe.pca <- prcomp(Prob_word,
+                 center = TRUE,
+                 scale. = TRUE) 
+# print method
+print(probe.pca)
+# plot method
+plot(probe.pca, type = "l")
+biplot(probe.pca, scale = 0)
+
+# summary method
+summary(probe.pca)
+
+#cumulative scree plot
+res.eign <- eigen(cor.m)
+res.eign
+prop.variance <-res.eign$values/(sum(res.eign$values))
+plot(cumsum(prop.variance), xlab = "Principal Component",
+              ylab = "Cumulative Proportion of Variance Explained",
+              type = "b")
+```
+
+```{r}
+# Predict PCs
+predict(probe.pca, 
+        newdata=tail(Prob_word, 2))
+
+library(caret)
+trans = preProcess(PROBE[,2:6], 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC = predict(trans, PROBE[,2:6])
+
+# Retained PCs that explained at least 95% of variance 
+head(PC,3)
+
+# Loadings
+trans$rotation
+```
+
+
+
+

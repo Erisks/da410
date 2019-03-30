@@ -1,0 +1,36 @@
+---
+title: "project 7"
+author: "Erika Vargas"
+date: "February 27, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+### Exploratory Factor Analysis Example
+#read the dataset into R variable using the read.csv(file) function
+dataessay <-read.table("~/Desktop/WINTER 2019/DA410-MULTIVARIATE-CHENG/multivariate_analysis - 3rd Ed/multivariate_analysis - 3rd Ed/T5_9_ESSAY.DAT", quote="\"", comment.char="", stringsAsFactors=FALSE, col.names = c("student", "y1","y2", "x1", "x2"))
+#display the data 
+dataessay
+essay <- dataessay[,2:5]
+#load psych
+library(psych)
+#library(GPArotation)
+#calculate the correlation matrix
+corMat  <-round(cor(essay),3)
+#display the correlation matrix
+corMat
+#use fa()to conduct an oblique principal-axis exploratory factor analysis
+#save the solution to an R variable
+solution <- principal(essay, nfactors = 2, rotate = 'none', covar = FALSE)
+#display the solution output
+solution
+```
+
+```{r}
+
+```
+
